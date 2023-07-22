@@ -18,6 +18,38 @@ function SilverWorldAssistant(){
 
     self.watcher = null;
 
+    self._oFeatures = {
+        auto: {
+            heal: [/^\/map/],
+            mana: [/^\/map/]
+        },
+        watchMonsters: [/^\/map/]
+    };
+
+    /**
+     * Default Setting for Initialization
+     *
+     * @type {{auto: {mana: boolean, heal: boolean}}}
+     * @private
+     */
+    self._oDefaultSettings = {
+        auto: {
+            heal: false,
+            mana: false
+        },
+        watchMonsters: true
+    };
+
+    /**
+     * Settings retrieve from LocalStorage
+     *
+     * @type {{}}
+     * @private
+     */
+    self._oSettings = {
+
+    };
+
     self._oHtmlElementsSelectors = {
         // Hit Point
         hitPoint: "img[v-tooltip='Vie']",
@@ -33,17 +65,37 @@ function SilverWorldAssistant(){
     };
 
     self._oHtmlElements = {
-        // Auto retrieved
+        /**
+         * Auto retrieved
+         */
+        // Structures
+        headband: null,
+
+        // Elements
         hitPoint:   null,
         manaPoint:  null,
         shortcuts:  null,
         monsters:   null,
 
-        // Built Elements
+        /**
+         * Built Elements
+         */
         spottedList: null,
     };
 
     self.ls = new LocalStorageUtil('SV-');
+
+    /**
+     * Returns the settings value using dot notation for better readability.
+     * Returns null if object property is not found.
+     *
+     * @param $sSettingPath
+     * @returns {*}
+     */
+    self.setting = function ($sSettingPath) {
+        // getValueForPath from // @require      https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
+        return self._oSettings.getValueForPath($sSettingPath);
+    };
 
     self.build = function(){
         return {
@@ -52,7 +104,10 @@ function SilverWorldAssistant(){
 
     self.shortcut = function($sShortcutGifName, $fCondition){
         if($fCondition()){
-            self._oHtmlElements.shortcuts.querySelector(`img[src*="${$sShortcutGifName}"]`).parentNode.click();
+            let oShortcutItem = self._oHtmlElements.shortcuts.querySelector(`img[src*="${$sShortcutGifName}"]`);
+            if(oShortcutItem) {
+                oShortcutItem.parentNode.click();
+            }
         }
     };
 
@@ -74,20 +129,52 @@ function SilverWorldAssistant(){
         };
     };
 
+    self.feature = function ($sFeature) {
+        return {
+            runnable: function () {
+                let aFeaturePathname = self._oFeatures.getValueForPath($sFeature);
+                let bFeatureRunnable = false;
+
+                if (aFeaturePathname) {
+                    for(let i = 0; i < aFeaturePathname.length; i++){
+                        if (aFeaturePathname[i].test(document.location.pathname)) {
+                            bFeatureRunnable = true;
+                            break;
+                        }
+                    }
+                }
+
+                return (bFeatureRunnable && self.setting($sFeature));
+            }
+        }
+    };
+
+    self.structureIdentifierEnhancer = function(){
+
+    };
+
     self.init = function(){
+        // Retrieve Elements
         for(let sKey in self._oHtmlElementsSelectors){
             let sValue = self._oHtmlElementsSelectors[sKey];
             self._oHtmlElements[sKey] = document.querySelector(sValue);
         }
 
-        // Initialization
-        if(self.ls.get('watch-monsters') === null){self.ls.set('watch-monsters', true);}
-        if(self.ls.get('auto-heal') === null){self.ls.set('auto-heal', true);}
-        if(self.ls.get('auto-mana') === null){self.ls.set('auto-mana', true);}
+        // Settings Initialization
+        if (self.ls.get('settings') === null) {
+            self.ls.set('settings', JSON.stringify(self._oDefaultSettings));
+        }
 
+        // Retrieve Settings
+        self._oSettings = Object.assign(self._oDefaultSettings, JSON.parse(self.ls.get('settings')));
+
+
+        // Start Feature Watcher
         self.watcher = setInterval(function(){
-            // Watch Monsters (+notifications)
-            if(self.ls.get('watch-monsters') === "true"){
+            /**
+             * Watch Monsters (+notifications)
+             */
+            if(self.feature('watchMonsters').runnable()){
                 // L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
                 let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
 
@@ -98,22 +185,26 @@ function SilverWorldAssistant(){
                         let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
                         let sMonsterName = $oMonster.querySelector('span').textContent;
                         $oMonster.setAttribute('data-spotted-id', ++self._nMonsterId);
-                        oSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                            name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId}] spotted at ${sDate}.`}
-                        }))
+                        // oSpottedList.querySelector('ul').appendChild(new HTML().compose({
+                        //     name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId}] spotted at ${sDate}.`}
+                        // }))
                     }
                 });
             }
 
-            // Auto Heal ()
-            if(self.ls.get('auto-heal') === "true"){
+            /**
+             *  Auto Heal ()
+             */
+            if(self.feature('auto.heal').runnable()){
                 self.shortcut('mag2', function(){
                     return ((self.hp().max() - self.hp().current()) >= 60);
                 });
             }
 
-            // Auto Mana ()
-            if(self.ls.get('auto-mana') === "true"){
+            /**
+             * Auto Mana ()
+             */
+            if(self.feature('auto.mana').runnable()){
                 self.shortcut('obj4', function(){
                     return ((self.mp().max() - self.mp().current()) >= 30);
                 });
@@ -139,15 +230,15 @@ window.SV = new SilverWorldAssistant().init();
 
 
 
-// Identify Monster
-// let nMonsterId = 0;
-let oMonsterContainer = document.querySelector('#monsters_container');
-let oSpottedList = null;
-
-// Create Spotted Monster List
-oMonsterContainer.appendChild(oSpottedList = new HTML().compose({
-    children:[{name:'ul'}]
-}));
+// // Identify Monster
+// // let nMonsterId = 0;
+// let oMonsterContainer = document.querySelector('#monsters_container');
+// let oSpottedList = null;
+//
+// // Create Spotted Monster List
+// oMonsterContainer.appendChild(oSpottedList = new HTML().compose({
+//     children:[{name:'ul'}]
+// }));
 
 
 
