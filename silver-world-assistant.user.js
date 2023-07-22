@@ -19,4 +19,24 @@
 (function() {
     'use strict';
 
+    // Add new link reference for our LESS Stylesheet.
+    document.querySelector('html head').appendChild(new HTML().compose({
+        name: 'link',
+        attributes: {
+            rel: 'stylesheet/less',
+            type: 'text/css',
+            href: `https://raw.githubusercontent.com/neooblaster/Silver-World/master/less/silver-world-assistant.less?ts=${new Date().getTime()}1`
+        },
+        properties: {
+            onload: function(){
+                // Apply newly loaded stylesheet
+                less.registerStylesheets();
+                less.refresh();
+            }
+        }
+    }));
+    // Apply newly loaded stylesheet
+    less.registerStylesheets();
+    less.refresh();
+
 })();

@@ -13,10 +13,33 @@
 // @require      https://rawcdn.githack.com/neooblaster/HTML/8f2ac9f0f94e506847309635b269de0356b46f3e/src/NotifyMe.min.js
 // @require      https://cdn.jsdelivr.net/npm/less@4.1.1
 // @require      https://cdn.jsdelivr.net/gh/neooblaster/jslib-deliver@master/Common/LocalStorageUtil/LocalStorageUtil.js
-// @require      file://D:\Neoblaster\Desktop\Silver-World-Assistant\silver-world-assistant.js
+// @require      http://localhost:8000/silver-world-assistant.js
 // ==/UserScript==
 
 (function() {
     'use strict';
+
+    // Add new link reference for our LESS Stylesheet.
+    document.querySelector('html head').appendChild(new HTML().compose({
+        name: 'link',
+        attributes: {
+            rel: 'stylesheet/less',
+            type: 'text/css',
+            //href: `https://raw.githubusercontent.com/neooblaster/Silver-World/master/less/silver-world-assistant.less?ts=${new Date().getTime()}1`
+            // python -m http.server
+            // + CORS Unblock
+            href: `http://localhost:8000/less/silver-world-assistant.less`
+        },
+        properties: {
+            onload: function(){
+                // Apply newly loaded stylesheet
+                less.registerStylesheets();
+                less.refresh();
+            }
+        }
+    }));
+    // Apply newly loaded stylesheet
+    less.registerStylesheets();
+    less.refresh();
 
 })();

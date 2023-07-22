@@ -1,21 +1,17 @@
-// Bridging Resources
+/**
+ * Bridging Resources
+ */
+// From // @require      https://rawcdn.githack.com/neooblaster/HTML/aa9263b08705a9676416f2ba64b474daa3a62945/release/v1.4.0/HTML.min.js
 window.HTML = HTML;
+// From // @require      https://cdn.jsdelivr.net/gh/neooblaster/jslib-deliver@master/Common/LocalStorageUtil/LocalStorageUtil.js
 window.LocalStorageUtil = LocalStorageUtil;
-
-
-// obj4  = Petite potion de mana (+30)
-// obj32 = Potion moyenne de mana (+50)
-//
-// mag2  = Sort de soin moyen (+60)
-
 
 // todo:
 // document.querySelector('div.map_cell.position');
 // -> data-position-x : 0-29 (1à30)
 // -> data-position-y : 0-11 (AàL)
 
-
-function SilverWorld(){
+function SilverWorldAssistant(){
     let self = this;
 
     self._nMonsterId = 0;
@@ -134,7 +130,7 @@ function SilverWorld(){
     return self;
 }
 
-window.SV = new SilverWorld().init();
+window.SV = new SilverWorldAssistant().init();
 
 
 
