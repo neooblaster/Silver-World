@@ -1,13 +1,48 @@
 # Silver-World Assistant
 
 
-### Map ID 
+## Summary
 
-Tutoria : 6437a3b1a12b1
 
-### Gif ID Lists
 
-### Objects List
+## Introduction
+
+
+
+## Feature List
+
+
+
+## Installation
+
+
+### Chrome Tampermonkey
+
+
+
+
+
+
+## Development Section
+
+
+### Identifiers
+
+
+
+#### Map ID 
+
+> ID is defined by the name of the JPEG filename.
+
+| Map ID         | Name     | Portals     |
+|----------------|----------|-------------|
+| 6437a3b1a12b1  | Tutoria  | A-2         |
+
+
+
+#### Objects List
+
+> ID is defined by the name of the GIF filename.
 
 | Gif ID | Item | Description |
 |--------|------|-------------|
@@ -15,8 +50,39 @@ Tutoria : 6437a3b1a12b1
 | obj32  | Potion moyenne de mana | +50 mana point |
 
 
-### Spells List
+
+#### Spells List
+
+> ID is defined by the name of the GIF filename.
 
 | Gif ID | Spell | Description |
 |--------|-------|-------------|
 | mag2   | Sort de soin moyen  | +60 hit point |
+
+
+
+
+
+
+### Development Environment
+
+
+#### TamperMonkey
+
+- Settings for external cache
+- Open chrome dev console and in ``network`` check `disable cache` to force resource reloading
+- ``#!watch`` for **LESS** to check in real time modifications
+
+
+
+
+#### Python
+
+Run the following command line in the root of the project folder
+
+> python -m http.server
+
+Resources are available at ``http://localhost:8000/``.
+
+
+#### Git
