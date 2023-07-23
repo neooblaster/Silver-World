@@ -11,14 +11,30 @@ window.LocalStorageUtil = LocalStorageUtil;
 // -> data-position-x : 0-29 (1à30)
 // -> data-position-y : 0-11 (AàL)
 
+
+/**
+ *
+ * @returns {SilverWorldAssistant}
+ * @constructor
+ *
+ * Common :
+ *  Update LocalStorage Settings : self.save().settings()
+ *
+ */
+
+
 function SilverWorldAssistant(){
     let self = this;
 
     self._nMonsterId = 0;
 
+    self._sActiveMapName = null;
+    self._aActiveMap = null;
+
     self.watcher = null;
 
     self._oFeatures = {
+        structure: [/^\/map/],
         auto: {
             heal: [/^\/map/],
             mana: [/^\/map/]
@@ -33,6 +49,7 @@ function SilverWorldAssistant(){
      * @private
      */
     self._oDefaultSettings = {
+        structure: true,
         auto: {
             heal: false,
             mana: false
@@ -51,6 +68,15 @@ function SilverWorldAssistant(){
     };
 
     self._oHtmlElementsSelectors = {
+        // Menu Bar
+        menuController: "#MenuController",
+
+        // Main Application Container
+        mainContainer: "body > div.container",
+
+        // Page Footer
+        footer: "#footer",
+
         // Hit Point
         hitPoint: "img[v-tooltip='Vie']",
 
@@ -69,7 +95,9 @@ function SilverWorldAssistant(){
          * Auto retrieved
          */
         // Structures
-        headband: null,
+        menuController: null,
+        mainContainer: null,
+        footer: null,
 
         // Elements
         hitPoint:   null,
@@ -80,7 +108,22 @@ function SilverWorldAssistant(){
         /**
          * Built Elements
          */
-        spottedList: null,
+        monsterSpottedList: null,
+    };
+
+    self._oHtmlIdEnhancer = {
+        menuController: {
+            id: "",
+            classes: ["menuController"]
+        },
+        mainContainer: {
+            id: "Main",
+            classes: ["MainContainer"]
+        },
+        footer: {
+            id: "",
+            classes: ["footer"]
+        },
     };
 
     self.ls = new LocalStorageUtil('SV-');
@@ -97,8 +140,44 @@ function SilverWorldAssistant(){
         return self._oSettings.getValueForPath($sSettingPath);
     };
 
-    self.build = function(){
+    self.save = function () {
         return {
+            settings: function () {
+                self.ls.set('settings', JSON.stringify(self._oSettings));
+            }
+        }
+    };
+
+    // self.setting = function () {
+    //     return {
+    //         get: function ($sSettingPath) {
+    //             // getValueForPath from // @require      https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
+    //             return self._oSettings.getValueForPath($sSettingPath);
+    //         },
+    //
+    //         set: function($sSettingPath, $mValue) {
+    //
+    //         },
+    //
+    //         save: function () {
+    //             self.ls.set('settings', JSON.stringify(self._oSettings));
+    //         }
+    //     }
+    // };
+
+    self.build = function(){
+
+        // Create Spotted Monster List
+        //oMonsterContainer.appendChild(oSpottedList = );
+
+        return {
+            monsterSpottedList: function () {
+                let oMonsterSpottedList = {
+                    children:[{name:'ul'}]
+                };
+
+                return self._oHtmlElements.monsterSpottedList = new HTML().compose(oMonsterSpottedList)
+            }
         };
     };
 
@@ -129,9 +208,89 @@ function SilverWorldAssistant(){
         };
     };
 
+    self.map = function ($sMapName = null) {
+        let x = null;
+        let y = null;
+
+        let aMapNameToId = {
+            "Tutoria": "6437a3b1a12b1"
+        };
+
+        let aMapIdToName = {
+            "6437a3b1a12b1": "Tutoria"
+        };
+
+        // Check & Get for LocalStorage "Map"
+        if (self.ls.get('maps') === null) {
+            self.ls.set('maps', JSON.stringify({}));
+        }
+        let oMaps = JSON.parse(self.ls.get('maps'));
+
+        // Get Map if specified
+        if ($sMapName) {
+            if (!oMaps[$sMapName]) {
+                oMaps[$sMapName] = self.map().initialize();
+            }
+            self._sActiveMapName = $sMapName;
+            self._aActiveMap = oMaps[$sMapName];
+        }
+
+        return {
+            initialize: function () {
+                let aMap = [];
+
+                // Row (12)
+                for (let r = 0; r < 12; r++) {
+                    let aRow = [];
+                    // Column (30)
+                    for (let c = 0; c < 30; c++) {
+                        aRow.push(-1);
+                    }
+                    aMap.push(aRow);
+                }
+
+                return aMap;
+            },
+
+            save: function () {
+                // Sur BDD
+
+                // LocalStorage
+                let oMaps = JSON.parse(self.ls.get('maps'));
+                oMaps[self._sActiveMapName] = self._aActiveMap;
+                self.ls.set('maps', JSON.stringify(oMaps));
+            },
+
+            x: function () {//self._aActiveMap
+                return {
+                    y: self.map().y,
+                    selectable: self.map().selectable,
+                    unselectable: self.map().unselectable
+                }
+            },
+
+            y: function () {//self._aActiveMap
+                return {
+                    x: self.map().x,
+                    selectable: self.map().selectable,
+                    unselectable: self.map().unselectable
+                }
+            },
+
+            selectable: function () {//self._aActiveMap
+                self.map().save();
+            },
+
+            unselectable: function () {//self._aActiveMap
+                self.map().save();
+            }
+        };
+    };
+
     self.feature = function ($sFeature) {
         return {
             runnable: function () {
+                // getValueForPath from // @require https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
                 let aFeaturePathname = self._oFeatures.getValueForPath($sFeature);
                 let bFeatureRunnable = false;
 
@@ -150,7 +309,20 @@ function SilverWorldAssistant(){
     };
 
     self.structureIdentifierEnhancer = function(){
+        for (let sElement in self._oHtmlIdEnhancer) {
+            let oEnhancement = self._oHtmlIdEnhancer[sElement];
+            let oObject = self._oHtmlElements[sElement];
 
+            if (oEnhancement.id) {
+                oObject.setAttribute('id', oEnhancement.id)
+            }
+            if (oEnhancement.classes.length) {
+                oEnhancement.classes.map(function ($sClass) {
+                    oObject.classList.add(`SVA-${$sClass}`);
+                });
+            }
+
+        }
     };
 
     self.init = function(){
@@ -162,12 +334,17 @@ function SilverWorldAssistant(){
 
         // Settings Initialization
         if (self.ls.get('settings') === null) {
-            self.ls.set('settings', JSON.stringify(self._oDefaultSettings));
+            self._oSettings = self._oDefaultSettings;
+            self.save().settings();
         }
 
         // Retrieve Settings
         self._oSettings = Object.assign(self._oDefaultSettings, JSON.parse(self.ls.get('settings')));
 
+        // Enhance Elements
+        if (self.feature('structure').runnable()) {
+            self.structureIdentifierEnhancer();
+        }
 
         // Start Feature Watcher
         self.watcher = setInterval(function(){
@@ -175,7 +352,12 @@ function SilverWorldAssistant(){
              * Watch Monsters (+notifications)
              */
             if(self.feature('watchMonsters').runnable()){
-                // L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
+                // Build Monster Spotted List container if not already done
+                if (!self._oHtmlElements.monsterSpottedList) {
+                    self._oHtmlElements.monsters.appendChild(self.build().monsterSpottedList());
+                }
+
+                // @TODO L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
                 let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
 
                 oMonsters.forEach(function($oMonster){
@@ -186,8 +368,9 @@ function SilverWorldAssistant(){
                         let sMonsterName = $oMonster.querySelector('span').textContent;
                         $oMonster.setAttribute('data-spotted-id', ++self._nMonsterId);
                         // oSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                        //     name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId}] spotted at ${sDate}.`}
-                        // }))
+                        self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
+                            name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId}] spotted at ${sDate}.`}
+                        }))
                     }
                 });
             }
@@ -230,12 +413,12 @@ window.SV = new SilverWorldAssistant().init();
 
 
 
-// // Identify Monster
-// // let nMonsterId = 0;
+// Identify Monster
+// let nMonsterId = 0;
 // let oMonsterContainer = document.querySelector('#monsters_container');
 // let oSpottedList = null;
-//
-// // Create Spotted Monster List
+
+// Create Spotted Monster List
 // oMonsterContainer.appendChild(oSpottedList = new HTML().compose({
 //     children:[{name:'ul'}]
 // }));
