@@ -39,28 +39,6 @@ window.HTML = HTML;
 window.LocalStorageUtil = LocalStorageUtil;
 
 
-/**
- * feature <Feature> :
- *  ._oFeatures.<Feature>         --> Scope d'application sur PathName
- *  ._oDefaultSettings.<Feature>  --> Settings initial
- *  ._oSettings.<Feature>         --> Settings Life cycle
- *  .feature() return {<Feature>} --> Fonction
- *
- *
- *  -> Amémioration de ._oFeatures stockant les moteurs des features sous objet dont :
- *  {
- *      scopes: [x,x,x] --> Scope inutile si l'instance porte "runnable"
- *      instance: new function($oParent){
- *          ...
- *          avec
- *          init: function
- *          runnable: function
- *      }
- *  }
- *
- * .feature deviens l'interface de manipulation pour run et aussi fournir  la def initial
- *
- */
 
 /**
  *
@@ -72,27 +50,21 @@ window.LocalStorageUtil = LocalStorageUtil;
  *
  */
 function SilverWorldAssistant(){
+    /**
+     * Current Instance. Highly simplify this contexte binding
+     *
+     * @type {SilverWorldAssistant}
+     */
     let self = this;
 
+    /**
+     * The root location to load feature scripts (must be update on "prod" delivery)
+     *
+     * @type {string}
+     * @private
+     */
     self._sRootLocation = 'http://localhost:8000/';
     // self._sRootLocation = 'https://cdn.jsdelivr.net/gh/neooblaster/Silver-World@master/';
-
-    self._nMonsterId = 0;
-    self._aPreviousMonsters = {};
-
-    self._sActiveMapName = null;
-    self._aActiveMap = null;
-
-    self.watcher = null;
-
-    self._oFeatures = {
-        structure: [/^\/map/],
-        auto: {
-            heal: [/^\/map/],
-            mana: [/^\/map/]
-        },
-        watchMonsters: [/^\/map/]
-    };
 
     /**
      * Default Setting for Initialization
@@ -108,12 +80,6 @@ function SilverWorldAssistant(){
         features: {
 
         }
-        // structure: true,
-        // auto: {
-        //     heal: false,
-        //     mana: false
-        // },
-        // watchMonsters: true
     };
 
     /**
@@ -180,7 +146,6 @@ function SilverWorldAssistant(){
         monsters: "#monsters_container"
     };
 
-
     /**
      * Retrieved element stored localy
      *
@@ -222,8 +187,34 @@ function SilverWorldAssistant(){
         monsterSpottedList: null,
     };
 
+    /**
+     * Registered feature (with their instance)
+     *
+     * @type {{}}
+     */
+    self.features = {
+
+    };
+
+    /**
+     * Counter to acknolege when all feature are completely loaded
+     *
+     * @type {number}
+     * @private
+     */
     self._nLoadingFeatures = 0;
 
+
+
+
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    self._nMonsterId = 0;
+    self._aPreviousMonsters = {};
+    self._sActiveMapName = null;
+    self._aActiveMap = null;
+    self.watcher = null;
     self._oHtmlIdEnhancer = {
         menuController: {
             id: "",
@@ -238,9 +229,23 @@ function SilverWorldAssistant(){
             classes: ["footer"]
         },
     };
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
 
+
+
+
+
+
+
+    /**
+     * LocalStorageUtil
+     *
+     * @param $sPrefix
+     * @return {{set: (function(String, mixed): boolean), get: (function(String): (DOMPoint | SVGNumber | string | SVGTransform | SVGLength | SVGPathSeg | any)), del: del}}
+     */
     self.ls = new LocalStorageUtil('SV-');
-
 
     /**
      * Interface from main player panel
@@ -668,11 +673,9 @@ function SilverWorldAssistant(){
 
 
 
-    /** --------------------------------------------------------------------------------------------------------------------
-     *
-     *              REWORK ZONE
-     */
-    /** --------------------------------------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
     self.build = function(){
         // Create Spotted Monster List
         //oMonsterContainer.appendChild(oSpottedList = );
@@ -812,14 +815,6 @@ function SilverWorldAssistant(){
         return self;
     };
 
-    /**
-     * Registered feature
-     *
-     * @type {{}}
-     */
-    self.features = {
-
-    };
 
     self.watcher = function () {
         // /**
@@ -898,7 +893,11 @@ function SilverWorldAssistant(){
         //     }
         // }
     };
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
+    /**<---------------------------------------------------------------------------------------**/
 
+    
     return self;
 }
 
