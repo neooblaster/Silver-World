@@ -74,6 +74,9 @@ window.LocalStorageUtil = LocalStorageUtil;
 function SilverWorldAssistant(){
     let self = this;
 
+    self._sRootLocation = 'http://localhost:8000/';
+    // self._sRootLocation = 'https://cdn.jsdelivr.net/gh/neooblaster/Silver-World@master/';
+
     self._nMonsterId = 0;
     self._aPreviousMonsters = {};
 
@@ -98,12 +101,19 @@ function SilverWorldAssistant(){
      * @private
      */
     self._oDefaultSettings = {
-        structure: true,
-        auto: {
-            heal: false,
-            mana: false
-        },
-        watchMonsters: true
+        // Settings for Ui Restructuration
+        structure: false,
+
+        // Feature settings datastore
+        features: {
+
+        }
+        // structure: true,
+        // auto: {
+        //     heal: false,
+        //     mana: false
+        // },
+        // watchMonsters: true
     };
 
     /**
@@ -211,6 +221,8 @@ function SilverWorldAssistant(){
          */
         monsterSpottedList: null,
     };
+
+    self._nLoadingFeatures = 0;
 
     self._oHtmlIdEnhancer = {
         menuController: {
@@ -486,69 +498,182 @@ function SilverWorldAssistant(){
         }
     };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
-     * Returns the settings value using dot notation for better readability.
-     * Returns null if object property is not found.
+     * Settings Interface
      *
-     * @param $sSettingPath
-     * @returns {*}
+     * Return settings for Core, but also used as constructor as feature level
+     * where settings scope is limited
+     *
+     * @param $sPathPrefix
+     * @return {{set: set, get: get, save: save, initialize: initialize}}
      */
-    self.setting = function ($sSettingPath) {
-        // getValueForPath from // @require      https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
-        return self._oSettings.getValueForPath($sSettingPath);
-    };
-
-    self.save = function () {
+    self.setting = function ($sPathPrefix = '') {
         return {
-            settings: function () {
+            /**
+             * Returns the settings value with property path by dot notation
+             *
+             * @param $sSettingPath
+             * @return {null|*}
+             */
+            get: function ($sSettingPath) {
+                // getValueForPath from // @require      https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
+                try {
+                    return self._oSettings.getValueForPath(`${$sPathPrefix}${$sSettingPath}`);
+                } catch ($err) {
+                    return null;
+                }
+            },
+
+            /**
+             * Define the settings by dot notation
+             *
+             * @param $sSettingPath
+             * @param $mValue
+             * @return {boolean}
+             */
+            set: function($sSettingPath, $mValue) {
+                let sSettingPath = `${$sPathPrefix}${$sSettingPath}`;
+                let aProperties = sSettingPath.split('.');
+                let oCurrentObject = self._oSettings;
+
+                // Properties validation
+                for (let nIndex = 0; nIndex < aProperties.length - 1; nIndex++) {
+                    if (!oCurrentObject[aProperties[nIndex]]) {
+                        oCurrentObject[aProperties[nIndex]] = {};
+
+                        oCurrentObject = oCurrentObject[aProperties[nIndex]];
+                    } else {
+                        if (typeof oCurrentObject[aProperties[nIndex]] !== 'object') {
+                            return false;
+                        } else {
+                            oCurrentObject = oCurrentObject[aProperties[nIndex]];
+                        }
+                    }
+                }
+
+                // If all succeeded
+                let sProperty = aProperties[aProperties.length - 1];
+                oCurrentObject[sProperty] = $mValue;
+
+                self.setting().save();
+
+                return true;
+            },
+
+            /**
+             * Initialize settings with specified value only if settings does not exists
+             *
+             * @param $sSettingPath
+             * @param $mValue
+             */
+            initialize: function ($sSettingPath, $mValue) {
+                let sSettingPath = `${$sPathPrefix}${$sSettingPath}`;
+
+                if (self.setting().get(sSettingPath) === null) {
+                    self.setting().set(sSettingPath, $mValue);
+                }
+
+                self.setting().save();
+            },
+
+            /**
+             * Store settings in the Local Storage
+             */
+            save: function () {
                 self.ls.set('settings', JSON.stringify(self._oSettings));
             }
         }
     };
 
-    // self.setting = function () {
-    //     return {
-    //         get: function ($sSettingPath) {
-    //             // getValueForPath from // @require      https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
-    //             return self._oSettings.getValueForPath($sSettingPath);
-    //         },
-    //
-    //         set: function($sSettingPath, $mValue) {
-    //
-    //         },
-    //
-    //         save: function () {
-    //             self.ls.set('settings', JSON.stringify(self._oSettings));
-    //         }
-    //     }
-    // };
+    /**
+     * Feature interface
+     *
+     * @return {{runnable: (function(*=): boolean), interface: {init: interface.init}, register: register}}
+     */
+    self.feature = function () {
+        return {
+            /**
+             * Default method impletation to prevent runtime errors
+             */
+            interface: {
+                init: function () {
 
+                }
+            },
+
+            /**
+             * Register a new feature (standing for a standalone JS Script)
+             *
+             * @param $sFeature
+             */
+            register: function ($sFeature) {
+                // Indicates Feature is loading
+                self._nLoadingFeatures++;
+                console.log("Feature " + $sFeature + "is loading : " + self._nLoadingFeatures);
+
+                let oNewScript = {
+                    name: 'script',
+                    attributes: {
+                        src: `${self._sRootLocation}features/${$sFeature}.js`
+                    },
+                    properties: {
+                        onload: function () {
+                            // Let time to executes script
+                            // setTimeout(function () {
+                            // Feature script is loaded
+                            self._nLoadingFeatures--;
+
+                            // Instantiate
+                            let fFunction = ()=>{};
+                            eval(`fFunction = ${$sFeature}`);
+                            self.features[$sFeature] = Object.assign(self.feature().interface, new fFunction(self));
+
+                            // Initialize
+                            self.features[$sFeature].init();
+
+                            console.log("Feature " + $sFeature + "is loaded : " + self._nLoadingFeatures);
+                            // }, 1000);
+
+                        }
+                    }
+                };
+
+                document.head.appendChild(new HTML().compose(oNewScript));
+            },
+
+            /**
+             * Check if the Document.location.pathname match with specified scopes
+             *
+             * @param $aScope
+             * @return {boolean}
+             */
+            runnable: function ($aScope) {
+                let bFeatureRunnable = false;
+
+                if ($aScope) {
+                    for(let i = 0; i < $aScope.length; i++){
+                        if ($aScope[i].test(document.location.pathname)) {
+                            bFeatureRunnable = true;
+                            break;
+                        }
+                    }
+                }
+
+                return bFeatureRunnable;
+            }
+        }
+    };
+
+
+
+
+
+    /** --------------------------------------------------------------------------------------------------------------------
+     *
+     *              REWORK ZONE
+     */
+    /** --------------------------------------------------------------------------------------------------------------------**/
     self.build = function(){
-
         // Create Spotted Monster List
         //oMonsterContainer.appendChild(oSpottedList = );
 
@@ -643,31 +768,6 @@ function SilverWorldAssistant(){
         };
     };
 
-    self.feature = function ($sFeature) {
-        return {
-            register: function () {
-
-            },
-
-            runnable: function () {
-                // getValueForPath from // @require https://cdn.jsdelivr.net/gh/neooblaster/nativejs-proto-extensions/nativejs-proto-extensions.min.js
-                let aFeaturePathname = self._oFeatures.getValueForPath($sFeature);
-                let bFeatureRunnable = false;
-
-                if (aFeaturePathname) {
-                    for(let i = 0; i < aFeaturePathname.length; i++){
-                        if (aFeaturePathname[i].test(document.location.pathname)) {
-                            bFeatureRunnable = true;
-                            break;
-                        }
-                    }
-                }
-
-                return (bFeatureRunnable && self.setting($sFeature));
-            }
-        }
-    };
-
     self.structureIdentifierEnhancer = function(){
         for (let sElement in self._oHtmlIdEnhancer) {
             let oEnhancement = self._oHtmlIdEnhancer[sElement];
@@ -695,16 +795,16 @@ function SilverWorldAssistant(){
         // Settings Initialization
         if (self.ls.get('settings') === null) {
             self._oSettings = self._oDefaultSettings;
-            self.save().settings();
+            self.setting().save();
         }
 
         // Retrieve Settings
         self._oSettings = Object.assign(self._oDefaultSettings, JSON.parse(self.ls.get('settings')));
 
         // Enhance Elements
-        if (self.feature('structure').runnable()) {
-            self.structureIdentifierEnhancer();
-        }
+        // if (self.feature('structure').runnable()) {
+        //     self.structureIdentifierEnhancer();
+        // }
 
         // Start Features Watcher
         self.watcher = setInterval(self.watcher, 1000);
@@ -712,89 +812,91 @@ function SilverWorldAssistant(){
         return self;
     };
 
-    // temporaire
-    self.features = function () {
-        return {
+    /**
+     * Registered feature
+     *
+     * @type {{}}
+     */
+    self.features = {
 
-        }
     };
 
     self.watcher = function () {
-        /**
-         * Watch Monsters (+notifications)
-         */
-        if(self.feature('watchMonsters').runnable()){
-            // Data initilization
-            let oDate = new Date();
-            let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
-
-            // Build Monster Spotted List container if not already done
-            if (!self._oHtmlElements.monsterSpottedList) {
-                self._oHtmlElements.monsters.appendChild(self.build().monsterSpottedList());
-            }
-
-            // @TODO L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
-            // Retrieve all Monster cards
-            let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
-
-            // Collect cards data
-            let oCurrentMonsters = {};
-            oMonsters.forEach(function ($oMonster) {
-                // Data Collections
-                let sMonsterName  = $oMonster.querySelector('span').textContent;
-                let aMonsterGifID = $oMonster.querySelector('img').getAttribute('src').split('/');
-                let sMonsterGifID  = aMonsterGifID[aMonsterGifID.length - 1].split('.')[0];
-
-                // Data Generation
-                let oMonsterData  = {
-                    name: sMonsterName,
-                    id: sMonsterGifID
-                };
-
-                // Append to current monster
-                if (!oCurrentMonsters[sMonsterGifID]) {
-                    oCurrentMonsters[sMonsterGifID] = oMonsterData
-                }
-            });
-
-            // Check for new monsters
-            for (let sMonsterGifId in oCurrentMonsters) {
-                if(!oCurrentMonsters.hasOwnProperty(sMonsterGifId)) continue;
-                if (!self._aPreviousMonsters[sMonsterGifId]) {
-                    let sMonsterName = oCurrentMonsters[sMonsterGifId].name;
-                    self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                        name: "li", properties: {textContent: `${sMonsterName} (${sMonsterGifId}) spotted at ${sDate}.`}
-                    }))
-                }
-            }
-
-            // Save Previous Monster
-            self._aPreviousMonsters = oCurrentMonsters;
-        }
-
-        /**
-         *  Auto Heal ()
-         */
-        if(self.feature('auto.heal').runnable()){
-            if ((self.interface().getPlayerMaxHitPoint() - self.interface().getPlayerHitPoint()) >= 100) {
-                self.interface().shortcut().runByGifId('obj31');
-            }
-            if ((self.interface().getPlayerMaxHitPoint() - self.interface().getPlayerHitPoint()) >= 60) {
-                self.interface().shortcut().runByGifId('mag2');
-            }
-        }
-
-        /**
-         * Auto Mana ()
-         */
-        if(self.feature('auto.mana').runnable()){
-            if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 30) {
-                self.interface().shortcut().runByGifId('obj4');
-            }
-            if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 50) {
-                self.interface().shortcut().runByGifId('obj32');
-            }
-        }
+        // /**
+        //  * Watch Monsters (+notifications)
+        //  */
+        // if(self.feature('watchMonsters').runnable()){
+        //     // Data initilization
+        //     let oDate = new Date();
+        //     let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
+        //
+        //     // Build Monster Spotted List container if not already done
+        //     if (!self._oHtmlElements.monsterSpottedList) {
+        //         self._oHtmlElements.monsters.appendChild(self.build().monsterSpottedList());
+        //     }
+        //
+        //     // @TODO L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
+        //     // Retrieve all Monster cards
+        //     let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
+        //
+        //     // Collect cards data
+        //     let oCurrentMonsters = {};
+        //     oMonsters.forEach(function ($oMonster) {
+        //         // Data Collections
+        //         let sMonsterName  = $oMonster.querySelector('span').textContent;
+        //         let aMonsterGifID = $oMonster.querySelector('img').getAttribute('src').split('/');
+        //         let sMonsterGifID  = aMonsterGifID[aMonsterGifID.length - 1].split('.')[0];
+        //
+        //         // Data Generation
+        //         let oMonsterData  = {
+        //             name: sMonsterName,
+        //             id: sMonsterGifID
+        //         };
+        //
+        //         // Append to current monster
+        //         if (!oCurrentMonsters[sMonsterGifID]) {
+        //             oCurrentMonsters[sMonsterGifID] = oMonsterData
+        //         }
+        //     });
+        //
+        //     // Check for new monsters
+        //     for (let sMonsterGifId in oCurrentMonsters) {
+        //         if(!oCurrentMonsters.hasOwnProperty(sMonsterGifId)) continue;
+        //         if (!self._aPreviousMonsters[sMonsterGifId]) {
+        //             let sMonsterName = oCurrentMonsters[sMonsterGifId].name;
+        //             self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
+        //                 name: "li", properties: {textContent: `${sMonsterName} (${sMonsterGifId}) spotted at ${sDate}.`}
+        //             }))
+        //         }
+        //     }
+        //
+        //     // Save Previous Monster
+        //     self._aPreviousMonsters = oCurrentMonsters;
+        // }
+        //
+        // /**
+        //  *  Auto Heal ()
+        //  */
+        // if(self.feature('auto.heal').runnable()){
+        //     if ((self.interface().getPlayerMaxHitPoint() - self.interface().getPlayerHitPoint()) >= 100) {
+        //         self.interface().shortcut().runByGifId('obj31');
+        //     }
+        //     if ((self.interface().getPlayerMaxHitPoint() - self.interface().getPlayerHitPoint()) >= 60) {
+        //         self.interface().shortcut().runByGifId('mag2');
+        //     }
+        // }
+        //
+        // /**
+        //  * Auto Mana ()
+        //  */
+        // if(self.feature('auto.mana').runnable()){
+        //     if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 30) {
+        //         self.interface().shortcut().runByGifId('obj4');
+        //     }
+        //     if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 50) {
+        //         self.interface().shortcut().runByGifId('obj32');
+        //     }
+        // }
     };
 
     return self;
@@ -805,7 +907,9 @@ function SilverWorldAssistant(){
 window.SV = new SilverWorldAssistant();
 
 // Feature Registering
-window.SV.feature().register();
+// window.SV.feature().register('autoHeal');
+window.SV.feature().register('autoMana');
+// window.SV.feature().register('autoAttack');
 
 // Initialization & Run
 window.SV.init();
