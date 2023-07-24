@@ -194,8 +194,8 @@ function SilverWorldAssistant(){
         let oHP = self._oHtmlElements.hitPoint.parentNode.querySelector('span').textContent.split('/');
 
         return{
-            current: function(){return parseInt(oHP[0]);},
-            max: function(){return parseInt(oHP[1]);}
+            current: function(){return parseInt(oHP[0].replace(' ', ''));},// !!! It's not a space char
+            max: function(){return parseInt(oHP[1].replace(' ', ''));}// !!! It's not a space char
         };
     };
 
@@ -203,8 +203,8 @@ function SilverWorldAssistant(){
         let oMP = self._oHtmlElements.manaPoint.parentNode.querySelector('span').textContent.split('/');
 
         return{
-            current: function(){return parseInt(oMP[0]);},
-            max: function(){return parseInt(oMP[1]);}
+            current: function(){return parseInt(oMP[0].replace(' ', ''));},// !!! It's not a space char
+            max: function(){return parseInt(oMP[1].replace(' ', ''));}// !!! It's not a space char
         };
     };
 
@@ -363,14 +363,17 @@ function SilverWorldAssistant(){
 
                 oMonsters.forEach(function($oMonster){
                     if(!$oMonster.hasAttribute('data-spotted-id')){
-                        console.log($oMonster, $oMonster.querySelector('span').textContent);
                         let oDate = new Date();
                         let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
                         let sMonsterName = $oMonster.querySelector('span').textContent;
+                        let aMonsterId = $oMonster.querySelector('img').getAttribute('src').split('/');
+                        let sMonsterId = aMonsterId[aMonsterId.length - 1].split('.')[0];
+                        let sDay = '';
+
                         $oMonster.setAttribute('data-spotted-id', ++self._nMonsterId);
                         // oSpottedList.querySelector('ul').appendChild(new HTML().compose({
                         self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                            name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId}] spotted at ${sDate}.`}
+                            name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId} (${sMonsterId})] spotted at ${sDate}.`}
                         }))
                     }
                 });

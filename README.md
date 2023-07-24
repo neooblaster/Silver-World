@@ -61,6 +61,22 @@
 
 
 
+#### Monster ID
+
+> ID is defined by the name of the GIF filename.
+
+| Gif ID    | Monster |
+|-----------|---------|
+| monster1 | Blob |
+| monster4 |  |
+| monster5 | Abeille Tueuse |
+| monster6 |  |
+| monster7 | Scorpion |
+| monster7 |  |
+| monster16 | Pseudo-Dragon |
+
+
+
 
 
 
