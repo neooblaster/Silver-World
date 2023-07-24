@@ -3,6 +3,19 @@ function autoMana($oParent) {
     self.parent = $oParent;
 
     /**
+     * Object that provide mana point (came from DB)
+     *
+     * @type {*[]}
+     * @private
+     */
+    self._aManaProvider = [
+        // Petite Potion
+        {item: "obj4",  regen: 30},
+        // Grande Potion
+        {item: "obj32", regen: 50},
+    ];
+
+    /**
      * Create at instance level, same method of parent but scope to features.autoMana.
      */
     self.setting = new self.parent.setting('features.autoMana.');
@@ -17,8 +30,21 @@ function autoMana($oParent) {
      *
      */
     self.canRun = function () {
-        let b = self.setting.get('enabled');
         return (self.runnable() && self.setting.get('enabled'));
+    };
+
+    /**
+     * Executed code by Core watcher (every seconds)
+     */
+    self.watching = function () {
+        if (self.canRun()) {
+            // Auto Mana from Lower to Higher item
+            self._aManaProvider.map(function ($oItem) {
+                if ((self.parent.interface().getPlayerMaxManaPoint() - self.parent.interface().getPlayerManaPoint()) >= $oItem.regen) {
+                    self.parent.interface().shortcut().runByGifId($oItem.item);
+                }
+            });
+        }
     };
 
     /**

@@ -603,7 +603,12 @@ function SilverWorldAssistant(){
             interface: {
                 init: function () {
 
+                },
+
+                watching: function () {
+
                 }
+
             },
 
             /**
@@ -788,6 +793,10 @@ function SilverWorldAssistant(){
         }
     };
 
+    /**
+     *
+     * @return {SilverWorldAssistant}
+     */
     self.init = function(){
         // Retrieve Elements
         for(let sKey in self._oHtmlElementsSelectors){
@@ -810,13 +819,31 @@ function SilverWorldAssistant(){
         // }
 
         // Start Features Watcher
-        self.watcher = setInterval(self.watcher, 1000);
+        self.watcher = setInterval(self.watcher, 500);
 
         return self;
     };
 
-
+    /**
+     * Performs actions in the game
+     */
     self.watcher = function () {
+        // Can not run if feature are loading
+        if (!self._nLoadingFeatures) {
+            // Core execution
+
+            // Features execution
+            for (let sFeature in self.features) {
+                if(!self.features.hasOwnProperty(sFeature)) continue;
+                self.features[sFeature].watching();
+            }
+        }
+    };
+
+
+
+
+    self.watcherOld = function () {
         // /**
         //  * Watch Monsters (+notifications)
         //  */
@@ -878,18 +905,6 @@ function SilverWorldAssistant(){
         //     }
         //     if ((self.interface().getPlayerMaxHitPoint() - self.interface().getPlayerHitPoint()) >= 60) {
         //         self.interface().shortcut().runByGifId('mag2');
-        //     }
-        // }
-        //
-        // /**
-        //  * Auto Mana ()
-        //  */
-        // if(self.feature('auto.mana').runnable()){
-        //     if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 30) {
-        //         self.interface().shortcut().runByGifId('obj4');
-        //     }
-        //     if ((self.interface().getPlayerMaxManaPoint() - self.interface().getPlayerManaPoint()) >= 50) {
-        //         self.interface().shortcut().runByGifId('obj32');
         //     }
         // }
     };
