@@ -1,4 +1,8 @@
 /**
+ *
+ */
+
+/**
  * Bridging Resources
  */
 // From // @require      https://rawcdn.githack.com/neooblaster/HTML/aa9263b08705a9676416f2ba64b474daa3a62945/release/v1.4.0/HTML.min.js
@@ -13,6 +17,29 @@ window.LocalStorageUtil = LocalStorageUtil;
 
 
 /**
+ * feature <Feature> :
+ *  ._oFeatures.<Feature>         --> Scope d'application sur PathName
+ *  ._oDefaultSettings.<Feature>  --> Settings initial
+ *  ._oSettings.<Feature>         --> Settings Life cycle
+ *  .feature() return {<Feature>} --> Fonction
+ *
+ *
+ *  -> Amémioration de ._oFeatures stockant les moteurs des features sous objet dont :
+ *  {
+ *      scopes: [x,x,x] --> Scope inutile si l'instance porte "runnable"
+ *      instance: new function($oParent){
+ *          ...
+ *          avec
+ *          init: function
+ *          runnable: function
+ *      }
+ *  }
+ *
+ * .feature deviens l'interface de manipulation pour run et aussi fournir  la def initial
+ *
+ */
+
+/**
  *
  * @returns {SilverWorldAssistant}
  * @constructor
@@ -21,12 +48,11 @@ window.LocalStorageUtil = LocalStorageUtil;
  *  Update LocalStorage Settings : self.save().settings()
  *
  */
-
-
 function SilverWorldAssistant(){
     let self = this;
 
     self._nMonsterId = 0;
+    self._aPreviousMonsters = {};
 
     self._sActiveMapName = null;
     self._aActiveMap = null;
@@ -305,6 +331,20 @@ function SilverWorldAssistant(){
                 }
 
                 return (bFeatureRunnable && self.setting($sFeature));
+            },
+
+            structure: function () {
+
+            },
+
+            auto: {
+                heal: function () {
+
+                },
+
+                mana: function () {
+
+                }
             }
         }
     };
@@ -347,62 +387,93 @@ function SilverWorldAssistant(){
             self.structureIdentifierEnhancer();
         }
 
-        // Start Feature Watcher
-        self.watcher = setInterval(function(){
-            /**
-             * Watch Monsters (+notifications)
-             */
-            if(self.feature('watchMonsters').runnable()){
-                // Build Monster Spotted List container if not already done
-                if (!self._oHtmlElements.monsterSpottedList) {
-                    self._oHtmlElements.monsters.appendChild(self.build().monsterSpottedList());
-                }
-
-                // @TODO L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
-                let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
-
-                oMonsters.forEach(function($oMonster){
-                    if(!$oMonster.hasAttribute('data-spotted-id')){
-                        let oDate = new Date();
-                        let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
-                        let sMonsterName = $oMonster.querySelector('span').textContent;
-                        let aMonsterId = $oMonster.querySelector('img').getAttribute('src').split('/');
-                        let sMonsterId = aMonsterId[aMonsterId.length - 1].split('.')[0];
-                        let sDay = '';
-
-                        $oMonster.setAttribute('data-spotted-id', ++self._nMonsterId);
-                        // oSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                        self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
-                            name: "li", properties: {textContent: `${sMonsterName} [${self._nMonsterId} (${sMonsterId})] spotted at ${sDate}.`}
-                        }))
-                    }
-                });
-            }
-
-            /**
-             *  Auto Heal ()
-             */
-            if(self.feature('auto.heal').runnable()){
-                self.shortcut('mag2', function(){
-                    return ((self.hp().max() - self.hp().current()) >= 60);
-                });
-            }
-
-            /**
-             * Auto Mana ()
-             */
-            if(self.feature('auto.mana').runnable()){
-                self.shortcut('obj4', function(){
-                    return ((self.mp().max() - self.mp().current()) >= 30);
-                });
-
-                self.shortcut('obj32', function(){
-                    return ((self.mp().max() - self.mp().current()) >= 50);
-                });
-            }
-        }, 1000);
+        // Start Features Watcher
+        self.watcher = setInterval(self.watcher, 1000);
 
         return self;
+    };
+
+    // temporaire
+    self.features = function () {
+        return {
+
+        }
+    };
+
+    self.watcher = function () {
+        /**
+         * Watch Monsters (+notifications)
+         */
+        if(self.feature('watchMonsters').runnable()){
+            // Data initilization
+            let oDate = new Date();
+            let sDate = `${oDate.getHours()}h${oDate.getMinutes()}`;
+
+            // Build Monster Spotted List container if not already done
+            if (!self._oHtmlElements.monsterSpottedList) {
+                self._oHtmlElements.monsters.appendChild(self.build().monsterSpottedList());
+            }
+
+            // @TODO L'identification doit s'effectuer sur le nom uniquement -> faire un attribut de stockage des noms, mais les notif sur apparition du nom à l'instant T
+            // Retrieve all Monster cards
+            let oMonsters = self._oHtmlElements.monsters.querySelectorAll('.monster');
+
+            // Collect cards data
+            let oCurrentMonsters = {};
+            oMonsters.forEach(function ($oMonster) {
+                // Data Collections
+                let sMonsterName  = $oMonster.querySelector('span').textContent;
+                let aMonsterGifID = $oMonster.querySelector('img').getAttribute('src').split('/');
+                let sMonsterGifID  = aMonsterGifID[aMonsterGifID.length - 1].split('.')[0];
+
+                // Data Generation
+                let oMonsterData  = {
+                    name: sMonsterName,
+                    id: sMonsterGifID
+                };
+
+                // Append to current monster
+                if (!oCurrentMonsters[sMonsterGifID]) {
+                    oCurrentMonsters[sMonsterGifID] = oMonsterData
+                }
+            });
+
+            // Check for new monsters
+            for (let sMonsterGifId in oCurrentMonsters) {
+                if(!oCurrentMonsters.hasOwnProperty(sMonsterGifId)) continue;
+                if (!self._aPreviousMonsters[sMonsterGifId]) {
+                    let sMonsterName = oCurrentMonsters[sMonsterGifId].name;
+                    self._oHtmlElements.monsterSpottedList.querySelector('ul').appendChild(new HTML().compose({
+                        name: "li", properties: {textContent: `${sMonsterName} (${sMonsterGifId}) spotted at ${sDate}.`}
+                    }))
+                }
+            }
+
+            // Save Previous Monster
+            self._aPreviousMonsters = oCurrentMonsters;
+        }
+
+        /**
+         *  Auto Heal ()
+         */
+        if(self.feature('auto.heal').runnable()){
+            self.shortcut('mag2', function(){
+                return ((self.hp().max() - self.hp().current()) >= 60);
+            });
+        }
+
+        /**
+         * Auto Mana ()
+         */
+        if(self.feature('auto.mana').runnable()){
+            self.shortcut('obj4', function(){
+                return ((self.mp().max() - self.mp().current()) >= 30);
+            });
+
+            self.shortcut('obj32', function(){
+                return ((self.mp().max() - self.mp().current()) >= 50);
+            });
+        }
     };
 
     return self;
