@@ -15,6 +15,9 @@
 
 ## Installation
 
+1. Install Chrome Extension [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=fr)
+2. Install User Script [silver-world-assistant.user.js](https://github.com/neooblaster/jslib-deliver/raw/master/Kibana/M2020/M2020.tampermonkey.dev.user.js)
+
 
 ### Chrome Tampermonkey
 

@@ -50,11 +50,6 @@ window.LocalStorageUtil = LocalStorageUtil;
  *
  */
 function SilverWorldAssistant(){
-    /**
-     * Current Instance. Highly simplify this contexte binding
-     *
-     * @type {SilverWorldAssistant}
-     */
     let self = this;
 
     /**
@@ -63,8 +58,8 @@ function SilverWorldAssistant(){
      * @type {string}
      * @private
      */
-    self._sRootLocation = 'http://localhost:8000/';
-    // self._sRootLocation = 'https://cdn.jsdelivr.net/gh/neooblaster/Silver-World@master/';
+    // self._sRootLocation = 'http://localhost:8000/';
+    self._sRootLocation = 'https://cdn.jsdelivr.net/gh/neooblaster/Silver-World@master/';
 
     /**
      * Default Setting for Initialization
@@ -681,117 +676,117 @@ function SilverWorldAssistant(){
     /**<---------------------------------------------------------------------------------------**/
     /**<---------------------------------------------------------------------------------------**/
     /**<---------------------------------------------------------------------------------------**/
-    self.build = function(){
-        // Create Spotted Monster List
-        //oMonsterContainer.appendChild(oSpottedList = );
+    // self.build = function(){
+    //     // Create Spotted Monster List
+    //     //oMonsterContainer.appendChild(oSpottedList = );
+    //
+    //     return {
+    //         monsterSpottedList: function () {
+    //             let oMonsterSpottedList = {
+    //                 children:[{name:'ul'}]
+    //             };
+    //
+    //             return self._oHtmlElements.monsterSpottedList = new HTML().compose(oMonsterSpottedList)
+    //         }
+    //     };
+    // };
 
-        return {
-            monsterSpottedList: function () {
-                let oMonsterSpottedList = {
-                    children:[{name:'ul'}]
-                };
+    // self.map = function ($sMapName = null) {
+    //     let x = null;
+    //     let y = null;
+    //
+    //     let aMapNameToId = {
+    //         "Tutoria": "6437a3b1a12b1"
+    //     };
+    //
+    //     let aMapIdToName = {
+    //         "6437a3b1a12b1": "Tutoria"
+    //     };
+    //
+    //     // Check & Get for LocalStorage "Map"
+    //     if (self.ls.get('maps') === null) {
+    //         self.ls.set('maps', JSON.stringify({}));
+    //     }
+    //     let oMaps = JSON.parse(self.ls.get('maps'));
+    //
+    //     // Get Map if specified
+    //     if ($sMapName) {
+    //         if (!oMaps[$sMapName]) {
+    //             oMaps[$sMapName] = self.map().initialize();
+    //         }
+    //         self._sActiveMapName = $sMapName;
+    //         self._aActiveMap = oMaps[$sMapName];
+    //         self.map().save();
+    //     }
+    //
+    //     return {
+    //         initialize: function () {
+    //             let aMap = [];
+    //
+    //             // Row (12)
+    //             for (let r = 0; r < 12; r++) {
+    //                 let aRow = [];
+    //                 // Column (30)
+    //                 for (let c = 0; c < 30; c++) {
+    //                     aRow.push(-1);
+    //                 }
+    //                 aMap.push(aRow);
+    //             }
+    //
+    //             return aMap;
+    //         },
+    //
+    //         save: function () {
+    //             // Sur BDD
+    //
+    //             // LocalStorage
+    //             let oMaps = JSON.parse(self.ls.get('maps'));
+    //             oMaps[self._sActiveMapName] = self._aActiveMap;
+    //             self.ls.set('maps', JSON.stringify(oMaps));
+    //         },
+    //
+    //         x: function () {//self._aActiveMap
+    //             return {
+    //                 y: self.map().y,
+    //                 selectable: self.map().selectable,
+    //                 unselectable: self.map().unselectable
+    //             }
+    //         },
+    //
+    //         y: function () {//self._aActiveMap
+    //             return {
+    //                 x: self.map().x,
+    //                 selectable: self.map().selectable,
+    //                 unselectable: self.map().unselectable
+    //             }
+    //         },
+    //
+    //         selectable: function () {//self._aActiveMap
+    //             self.map().save();
+    //         },
+    //
+    //         unselectable: function () {//self._aActiveMap
+    //             self.map().save();
+    //         }
+    //     };
+    // };
 
-                return self._oHtmlElements.monsterSpottedList = new HTML().compose(oMonsterSpottedList)
-            }
-        };
-    };
-
-    self.map = function ($sMapName = null) {
-        let x = null;
-        let y = null;
-
-        let aMapNameToId = {
-            "Tutoria": "6437a3b1a12b1"
-        };
-
-        let aMapIdToName = {
-            "6437a3b1a12b1": "Tutoria"
-        };
-
-        // Check & Get for LocalStorage "Map"
-        if (self.ls.get('maps') === null) {
-            self.ls.set('maps', JSON.stringify({}));
-        }
-        let oMaps = JSON.parse(self.ls.get('maps'));
-
-        // Get Map if specified
-        if ($sMapName) {
-            if (!oMaps[$sMapName]) {
-                oMaps[$sMapName] = self.map().initialize();
-            }
-            self._sActiveMapName = $sMapName;
-            self._aActiveMap = oMaps[$sMapName];
-            self.map().save();
-        }
-
-        return {
-            initialize: function () {
-                let aMap = [];
-
-                // Row (12)
-                for (let r = 0; r < 12; r++) {
-                    let aRow = [];
-                    // Column (30)
-                    for (let c = 0; c < 30; c++) {
-                        aRow.push(-1);
-                    }
-                    aMap.push(aRow);
-                }
-
-                return aMap;
-            },
-
-            save: function () {
-                // Sur BDD
-
-                // LocalStorage
-                let oMaps = JSON.parse(self.ls.get('maps'));
-                oMaps[self._sActiveMapName] = self._aActiveMap;
-                self.ls.set('maps', JSON.stringify(oMaps));
-            },
-
-            x: function () {//self._aActiveMap
-                return {
-                    y: self.map().y,
-                    selectable: self.map().selectable,
-                    unselectable: self.map().unselectable
-                }
-            },
-
-            y: function () {//self._aActiveMap
-                return {
-                    x: self.map().x,
-                    selectable: self.map().selectable,
-                    unselectable: self.map().unselectable
-                }
-            },
-
-            selectable: function () {//self._aActiveMap
-                self.map().save();
-            },
-
-            unselectable: function () {//self._aActiveMap
-                self.map().save();
-            }
-        };
-    };
-
-    self.structureIdentifierEnhancer = function(){
-        for (let sElement in self._oHtmlIdEnhancer) {
-            let oEnhancement = self._oHtmlIdEnhancer[sElement];
-            let oObject = self._oHtmlElements[sElement];
-
-            if (oEnhancement.id) {
-                oObject.setAttribute('id', oEnhancement.id)
-            }
-            if (oEnhancement.classes.length) {
-                oEnhancement.classes.map(function ($sClass) {
-                    oObject.classList.add(`SVA-${$sClass}`);
-                });
-            }
-
-        }
-    };
+    // self.structureIdentifierEnhancer = function(){
+    //     for (let sElement in self._oHtmlIdEnhancer) {
+    //         let oEnhancement = self._oHtmlIdEnhancer[sElement];
+    //         let oObject = self._oHtmlElements[sElement];
+    //
+    //         if (oEnhancement.id) {
+    //             oObject.setAttribute('id', oEnhancement.id)
+    //         }
+    //         if (oEnhancement.classes.length) {
+    //             oEnhancement.classes.map(function ($sClass) {
+    //                 oObject.classList.add(`SVA-${$sClass}`);
+    //             });
+    //         }
+    //
+    //     }
+    // };
 
     /**
      *
@@ -912,7 +907,7 @@ function SilverWorldAssistant(){
     /**<---------------------------------------------------------------------------------------**/
     /**<---------------------------------------------------------------------------------------**/
 
-    
+
     return self;
 }
 
